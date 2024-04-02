@@ -1,6 +1,3 @@
 Date,Task,Subtasks,Priority,Weight
-2024-06-01 00:00:00,Final,[''],High,8
-2024-04-30 00:00:00,42 dots,['TI'],High,9
-2024-05-01 00:00:00,AI Expo,"['Showcase', ' edge devices', ' optimizatin']",Low,2
-2024-04-15 00:00:00,Mobis Demo R3,['TI'],High,7
-2024-8-10,Mobis Submission,[''],High,9
+2024-4-30,42DOTS,[''],High,8
+2024-5-1,AI Expo,[''],Medium,6
