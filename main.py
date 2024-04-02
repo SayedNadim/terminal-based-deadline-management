@@ -222,6 +222,7 @@ def print_colored_output(priority, message):
     color_end = '\033[0m'
     print(colors[priority] + message + color_end)
 
+
 #TODO: Show timeline based on range
 # Function to print the text-based timeline
 def print_text_timeline(data, horizontal=True):
@@ -279,17 +280,14 @@ def print_text_timeline(data, horizontal=True):
     print("-" * 20)
     print("\n")
 
+
+# Function to define color mapping for priority
+def get_priority_color(priority):
+    priority_colors = {"High": "red", "Medium": "orange", "Low": "green"}
+    return priority_colors[priority]
+
+
 #TODO: Show timeline based on range
-# Function to define color mapping for priority
-def get_priority_color(priority):
-    priority_colors = {"High": "red", "Medium": "orange", "Low": "green"}
-    return priority_colors[priority]
-
-# Function to define color mapping for priority
-def get_priority_color(priority):
-    priority_colors = {"High": "red", "Medium": "orange", "Low": "green"}
-    return priority_colors[priority]
-
 
 # Function to visualize timeline with customizable interval and date formatting
 def visualize_timeline(df, interval="W"):
@@ -341,9 +339,9 @@ def visualize_timeline(df, interval="W"):
     for date in all_dates:
         ax.axvline(x=date, color="gray", linestyle="--", linewidth=0.5, alpha=0.7)
 
-    # Set axis labels and title
-    ax.set_xlabel("Date")
-    ax.set_title("Timeline Visualization")
+    # # Set axis labels and title
+    # ax.set_xlabel("Date")
+    # ax.set_title("Timeline Visualization")
 
     # Set x-axis ticks and labels for all dates with dynamic format based on interval
     ax.set_xticks(all_dates)
@@ -369,10 +367,10 @@ def visualize_timeline(df, interval="W"):
         start_dates = [d for d in all_dates[:-1] if d not in dates]
         end_dates = [d for d in all_dates[1:] if d not in dates]
         ax.fill_between(
-            start_dates, 0, 1, color="lightgray", alpha=0.2, label="No Deadline"
+            start_dates, 0, 1, color="white", alpha=0.2, label="No Deadline"
         )  # Adjust color and alpha as needed
 
-    plt.legend()  # Add legend if shading is used
+    # plt.legend()  # Add legend if shading is used
     plt.tight_layout()
 
     # Display the plot
@@ -387,6 +385,7 @@ def search_events(df, keyword):
     else:
         print(f"\nSearch results for '{keyword}':")
         print(filtered_df)
+
 
 if __name__=="__main__":
 
