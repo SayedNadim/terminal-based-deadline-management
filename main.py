@@ -1,8 +1,10 @@
-import pandas as pd
 import datetime
-import time
 import sys
+import time
+
 import matplotlib.pyplot as plt
+import pandas as pd
+
 
 # Function to add date and event
 def add_event(df):
@@ -376,76 +378,6 @@ def visualize_timeline(df, interval="W"):
     # Display the plot
     plt.show()
 
-
-# # Function to visualize timeline
-# def visualize_timeline(df):
-#     if df.empty:
-#         print("There are no events to visualize.")
-#         return
-
-#     # Convert date strings to datetime objects for plotting
-#     df["Date"] = pd.to_datetime(df["Date"])
-
-#     # Sort DataFrame by date
-#     df = df.sort_values(by="Date")
-
-#     # Extract data for plotting
-#     dates = df["Date"].tolist()
-#     events = df["Event"].tolist()
-#     priorities = df["Priority"].tolist()
-#     colors = [get_priority_color(p) for p in priorities]  # Get colors based on priority
-
-#     # Create the plot with adjusted y-axis limits (set minimum to 0)
-#     fig, ax = plt.subplots(figsize=(12, 6))
-
-#     # Plot a horizontal line for the timeline
-#     plt.axhline(y=0, color="black", linewidth=1)
-
-#     # Plot event markers with consistent size and color based on priority
-#     event_marker_size = 20  # Adjust marker size as needed
-#     for date, event, color in zip(dates, events, colors):
-#         ax.plot(
-#             date,
-#             0,
-#             marker="o",
-#             markersize=event_marker_size,
-#             linestyle="",
-#             markerfacecolor=color,
-#             markeredgewidth=2,
-#             markeredgecolor="black",
-#         )
-
-#     # Generate regular interval dates (adjust frequency as needed)
-#     min_date = df["Date"].min()
-#     max_date = df["Date"].max()
-#     weekly_dates = pd.date_range(start=min_date, end=max_date, freq="W")  # Change "W" to desired frequency
-
-#     # Combine and sort all dates
-#     all_dates = sorted(list(dates) + list(weekly_dates))
-
-#     # Plot date markers (vertical lines) at event positions
-#     for date in all_dates:
-#         ax.axvline(x=date, color="gray", linestyle="--", linewidth=0.5, alpha=0.7)
-
-#     # Set axis labels and title
-#     ax.set_xlabel("Date")
-#     ax.set_title("Timeline Visualization")
-
-#     # Set x-axis ticks and labels for all dates
-#     ax.set_xticks(all_dates)
-#     ax.set_xticklabels([date.strftime("%Y-%m-%d") for date in all_dates], rotation=45, ha='right')
-
-#     # Remove y-axis ticks and labels
-#     ax.yaxis.set_visible(False)
-
-#     # Annotate event names above the markers (optional)
-#     for date, event, color in zip(dates, events, colors):
-#         ax.text(date, 0.01, event, ha="center", va="bottom", color=color, fontsize=10, rotation=90)
-
-#     plt.tight_layout()
-
-#     # Display the plot
-#     plt.show()
 
 # Function to search events by keyword
 def search_events(df, keyword):
