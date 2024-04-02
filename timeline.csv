@@ -1,4 +1,5 @@
-Date,Event,Subevents,Weight,Priority
-2024-04-30,Demo,[''],10,High
-2024-10-11,Nothing,[''],10,High
-2025-01-01,none,"['help', ' done', ' what']",5,high
+Date,Event,Subevents,Priority,Weight
+2024-6-1,Final,[''],High,8
+2024-4-30,42 dots,['TI'],High,9
+2024-5-1,AI Expo,"['Showcase', ' edge devices', ' optimizatin']",Low,2
+2024-4-15,Mobis Demo R3,['TI'],High,7
