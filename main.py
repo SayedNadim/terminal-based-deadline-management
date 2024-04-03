@@ -39,6 +39,8 @@ def add_task(df):
     new_row = {"Date": date, "Task": task, "Subtasks": subtasks, "Priority": priority, "Weight": weight}
     df = pd.concat([df, pd.DataFrame([new_row])], ignore_index=True)
     df.to_csv("timeline.csv", index=False)
+    print("\n")
+    print("-" * 20)
     print("task added successfully.")
     print("-" * 20)
     print("\n")
@@ -314,7 +316,7 @@ def visualize_timeline(df, interval="W"):
     plt.axhline(y=0, color="black", linewidth=1)
 
     # Plot task markers with consistent size and color based on priority
-    task_marker_size = 20  # Adjust marker size as needed
+    task_marker_size = 5  # Adjust marker size as needed
     for date, task, color in zip(dates, tasks, colors):
         ax.plot(
             date,
@@ -360,7 +362,7 @@ def visualize_timeline(df, interval="W"):
 
     # Annotate task names above the markers (optional)
     for date, task, color in zip(dates, tasks, colors):
-        ax.text(date, 0.1, task, ha="center", va="bottom", color=color, fontsize=10, rotation=90)
+        ax.text(date, 0.1, task, ha="center", va="bottom", color=color, fontsize=5, rotation=90)
 
     # Optional: Color shading for intervals (using fill_between)
     if interval != "D":  # Avoid shading for daily intervals for better clarity
@@ -385,6 +387,45 @@ def search_tasks(df, keyword):
     else:
         print(f"\nSearch results for '{keyword}':")
         print(filtered_df)
+
+def show_user_choice():
+    print("-" * 20)
+    print("Choose operation: [a/b/c/d/e/f/g/h/q]")
+    print("-" * 20)
+    print("a. Add date and task.")
+    print("b. View existing tasks.")
+    print("c. Remove existing task.")
+    print("d. Change task priority.")
+    print("e. Check immediate deadlines.")
+    print("f. Check the entire timeline.")
+    print("g. Visualize and save timeline.")
+    print("h. Search timeline for tasks.")
+    print("q. Quit")
+    print("-" * 20)
+
+
+def execute_user_choice(choice, timeline_df):
+    if choice == "a":
+        timeline_df = add_task(timeline_df)
+    elif choice == "b":
+        view_timeline(timeline_df)
+    elif choice == "c":
+        timeline_df = remove_task(timeline_df)
+    elif choice == "d":
+        timeline_df = change_task_priority(timeline_df)
+    elif choice == "e":
+        check_deadlines(timeline_df)
+    elif choice == "f":
+        print_text_timeline(timeline_df)
+    elif choice == "g":
+        visualize_timeline(timeline_df)
+    elif choice == "h":
+        keyword = input("Enter keyword to search for tasks: ")
+        search_tasks(timeline_df.copy(), keyword)
+    else:
+        print("Invalid choice. Please select a valid option.")
+        show_user_choice()
+    return timeline_df
 
 
 if __name__=="__main__":
@@ -417,43 +458,31 @@ if __name__=="__main__":
     # show nearest deadline first
     check_deadlines(timeline_df)
 
+    # create a counter to avoid unnecessary loop of options
+    app_run_counter = 0
+
     # Main program loop
     while True:
-        print("-" * 20)
-        print("Options:")
-        print("-" * 20)
-        print("a. Add date and task.")
-        print("b. View existing tasks.")
-        print("c. Remove existing task.")
-        print("d. Change task priority.")
-        print("e. Check immediate deadlines.")
-        print("f. Check the entire timeline.")
-        print("g. Visualize and save timeline.")
-        print("h. Search timeline for tasks.")
-        print("q. Quit")
-        print("-" * 20)
-
-        choice = input("Enter your choice: ")
-
-        if choice == "a":
-            timeline_df = add_task(timeline_df)
-        elif choice == "b":
-            view_timeline(timeline_df)
-        elif choice == "c":
-            timeline_df = remove_task(timeline_df)
-        elif choice == "d":
-            timeline_df = change_task_priority(timeline_df)
-        elif choice == "e":
-            check_deadlines(timeline_df)
-        elif choice == "f":
-            print_text_timeline(timeline_df)
-        elif choice == "g":
-            visualize_timeline(timeline_df)
-        elif choice == "h":
-            keyword = input("Enter keyword to search for tasks: ")
-            search_tasks(timeline_df.copy(), keyword)
-        elif choice == "q":
-            print("Exiting program.")
-            break
+        if app_run_counter == 0:
+            show_user_choice()
+            choice = input("Enter your choice: ")
+            if choice == "q":
+                print("Exiting program.")
+                break
+            else:
+                timeline_df = execute_user_choice(choice=choice, timeline_df=timeline_df)
         else:
-            print("Invalid choice. Please select a valid option.")
+            app_run_choice = input("Do you want to continue editing your timeline? [y for continue/ any other key for exiting]")
+            if app_run_choice == "y":
+                show_user_choice()
+                choice = input("Enter your choice: ")
+                if choice == "q":
+                    print("Exiting program.")
+                    break
+                else:
+                    timeline_df = execute_user_choice(choice=choice, timeline_df=timeline_df)
+            else:
+                print("Exiting program.")
+                break
+        app_run_counter += 1
+
