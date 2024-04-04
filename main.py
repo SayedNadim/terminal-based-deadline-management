@@ -15,7 +15,13 @@ def add_task(df):
     while True:  # Enclosing loop for retrying all inputs if needed
         try:
             date = input("Enter date (YYYY-MM-DD): ")
-            datetime.datetime.strptime(date, "%Y-%m-%d")  # Validate format
+            if len(date) > 10:
+                # String has time information
+                datetime.datetime.strptime(date, "%Y-%m-%d %H:%M:%S")
+            else:
+                # String has no time information
+                datetime.datetime.strptime(date, "%Y-%m-%d")
+            # datetime.datetime.strptime(date, "%Y-%m-%d")
             date = date.replace("-0", "-")  # Remove leading zeros from single-digit dates
 
             task = input("Enter task: ")
@@ -472,8 +478,8 @@ if __name__=="__main__":
             else:
                 timeline_df = execute_user_choice(choice=choice, timeline_df=timeline_df)
         else:
-            app_run_choice = input("Do you want to continue editing your timeline? [y for continue/ any other key for exiting]")
-            if app_run_choice == "y":
+            app_run_choice = input("Do you want to continue editing your timeline? [y for continue/ any other key for exiting]: ")
+            if app_run_choice.lower() == "y":
                 show_user_choice()
                 choice = input("Enter your choice: ")
                 if choice == "q":
