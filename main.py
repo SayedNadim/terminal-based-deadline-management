@@ -6,7 +6,120 @@ import matplotlib.pyplot as plt
 import pandas as pd
 
 
-# Function to add date and task
+
+# # function to add date
+# def add_date():
+#     date = input("Enter date (YYYY-MM-DD): ")
+#     if len(date) > 10:
+#         # String has time information
+#         datetime.datetime.strptime(date, "%Y-%m-%d %H:%M:%S")
+#     else:
+#         # String has no time information
+#         datetime.datetime.strptime(date, "%Y-%m-%d")
+#     date = date[:10]
+#     date = date.replace("-0", "-")  # Remove leading zeros from single-digit dates
+#     return date
+
+
+# def add_tasks_subtasks_weights():
+#     task = input("Enter task: ")
+#     subtasks = input("Enter subtasks (if any, separated by comma): ").split(',')
+
+#     while True:  # Loop until valid priority is entered
+#         priority = input("Enter priority (High, Medium, Low): ")
+#         if priority in ["High", "Medium", "Low"]:
+#             break
+#         print("Invalid priority. Please enter High, Medium, or Low.")
+
+#     while True:  # Loop until valid weight is entered
+#         try:
+#             weight = int(input("Enter weight of the task (1-10): "))
+#             if not 1 <= weight <= 10:
+#                 raise ValueError
+#             break
+#         except ValueError:
+#             print("Invalid weight. Please enter an integer between 1 and 10.")
+
+#     return task, subtasks, priority, weight
+
+
+# # Function to add date and task
+# def add_task(df):
+#     print("\n")
+#     print("-" * 20)
+#     print("Adding Task:")
+
+#     while True:  # Enclosing loop for retrying all inputs if needed
+#         try:
+#             date = add_date()
+#             task, subtasks, priority, weight = add_tasks_subtasks_weights()
+#             break  # Exit the enclosing while loop if all inputs are valid
+
+#         except ValueError:
+#             print("Invalid input. Please try again.")
+
+#     new_row = {"Date": date, "Task": task, "Subtasks": subtasks, "Priority": priority, "Weight": weight}
+#     df = pd.concat([df, pd.DataFrame([new_row])], ignore_index=True)
+#     df.to_csv("timeline.csv", index=False)
+#     print("\n")
+#     print("-" * 20)
+#     print("task added successfully.")
+#     print("-" * 20)
+#     print("\n")
+#     return df
+
+
+
+# Function to add date
+def add_date():
+    date = input("Enter date (YYYY-MM-DD): ")
+    if len(date) > 10:
+        # String has time information
+        datetime.datetime.strptime(date, "%Y-%m-%d %H:%M:%S")
+    else:
+        # String has no time information
+        datetime.datetime.strptime(date, "%Y-%m-%d")
+    date = date[:10]
+    date = date.replace("-0", "-")  # Remove leading zeros from single-digit dates
+    return date
+
+def add_tasks_subtasks_weights_descriptions():
+    task = input("Enter task: ")
+    task_description = input("Enter task description (optional): ")
+
+    subtasks = input("Enter subtasks (if any, separated by comma): ").split(',')
+    subtask_descriptions = []
+    subtask_dates = []
+    subtask_priorities = []
+    subtask_weights = []
+
+    for subtask in subtasks:
+        subtask_description = input(f"Enter description for '{subtask}' (optional): ")
+        subtask_date = add_date()
+        
+        while True:  # Loop until valid priority is entered
+            subtask_priority = input(f"Enter priority for '{subtask}' (High, Medium, Low): ")
+            if subtask_priority in ["High", "Medium", "Low"]:
+                break
+            print("Invalid priority. Please enter High, Medium, or Low.")
+
+        while True:  # Loop until valid weight is entered
+            try:
+                subtask_weight = int(input(f"Enter weight for '{subtask}' (1-10): "))
+                if not 1 <= subtask_weight <= 10:
+                    raise ValueError
+                break
+            except ValueError:
+                print("Invalid weight. Please enter an integer between 1 and 10.")
+
+        subtask_descriptions.append(subtask_description)
+        subtask_dates.append(subtask_date)
+        subtask_priorities.append(subtask_priority)
+        subtask_weights.append(subtask_weight)
+
+    return task, task_description, subtasks, subtask_descriptions, subtask_dates, subtask_priorities, subtask_weights
+
+# Function to add task
 def add_task(df):
     print("\n")
     print("-" * 20)
@@ -14,44 +127,27 @@ def add_task(df):
 
     while True:  # Enclosing loop for retrying all inputs if needed
         try:
-            date = input("Enter date (YYYY-MM-DD): ")
-            if len(date) > 10:
-                # String has time information
-                datetime.datetime.strptime(date, "%Y-%m-%d %H:%M:%S")
-            else:
-                # String has no time information
-                datetime.datetime.strptime(date, "%Y-%m-%d")
-            # datetime.datetime.strptime(date, "%Y-%m-%d")
-            date = date.replace("-0", "-")  # Remove leading zeros from single-digit dates
-
-            task = input("Enter task: ")
-            subtasks = input("Enter subtasks (if any, separated by comma): ").split(',')
-
-            while True:  # Loop until valid priority is entered
-                priority = input("Enter priority (High, Medium, Low): ")
-                if priority in ["High", "Medium", "Low"]:
-                    break
-                print("Invalid priority. Please enter High, Medium, or Low.")
-
-            weight = int(input("Enter weight of the task (1-10): "))
-            if not 1 <= weight <= 10:
-                raise ValueError  # Raise for outer try-except to catch
-
+            task, task_description, subtasks, subtask_descriptions, subtask_dates, subtask_priorities, subtask_weights = add_tasks_subtasks_weights_descriptions()
             break  # Exit the enclosing while loop if all inputs are valid
 
         except ValueError:
             print("Invalid input. Please try again.")
 
-    new_row = {"Date": date, "Task": task, "Subtasks": subtasks, "Priority": priority, "Weight": weight}
-    df = pd.concat([df, pd.DataFrame([new_row])], ignore_index=True)
+    new_rows = []
+    for i, subtask in enumerate(subtasks):
+        new_row = {"Date": subtask_dates[i], "Task": task, "Task Description": task_description,
+                   "Subtask": subtask, "Subtask Description": subtask_descriptions[i],
+                   "Priority": subtask_priorities[i], "Weight": subtask_weights[i]}
+        new_rows.append(new_row)
+    
+    df = pd.concat([df, pd.DataFrame(new_rows)], ignore_index=True)
     df.to_csv("timeline.csv", index=False)
     print("\n")
     print("-" * 20)
-    print("task added successfully.")
+    print("Task added successfully.")
     print("-" * 20)
     print("\n")
     return df
-
 
 # Function to view existing timeline
 def view_timeline(df):
@@ -335,13 +431,14 @@ def visualize_timeline(df, interval="W"):
             markeredgecolor="black",
         )
 
-    # Generate regular interval dates (adjust frequency and format based on interval)
-    min_date = df["Date"].min()
-    max_date = df["Date"].max()
-    interval_dates = pd.date_range(start=min_date, end=max_date, freq=interval)
+    # # Generate regular interval dates (adjust frequency and format based on interval)
+    # min_date = df["Date"].min()
+    # max_date = df["Date"].max()
+    # interval_dates = pd.date_range(start=min_date, end=max_date, freq=interval)
 
-    # Combine and sort all dates
-    all_dates = sorted(list(dates) + list(interval_dates))
+    # # Combine and sort all dates
+    # all_dates = sorted(list(dates) + list(interval_dates))
+    all_dates = sorted(list(dates))
 
     # Plot date markers (vertical lines) at all positions
     for date in all_dates:
@@ -368,7 +465,7 @@ def visualize_timeline(df, interval="W"):
 
     # Annotate task names above the markers (optional)
     for date, task, color in zip(dates, tasks, colors):
-        ax.text(date, 0.1, task, ha="center", va="bottom", color=color, fontsize=5, rotation=90)
+        ax.text(date, 0.1, task, ha="center", va="bottom", color=color, fontsize=10, rotation=90)
 
     # Optional: Color shading for intervals (using fill_between)
     if interval != "D":  # Avoid shading for daily intervals for better clarity
@@ -466,7 +563,6 @@ if __name__=="__main__":
 
     # create a counter to avoid unnecessary loop of options
     app_run_counter = 0
-
     # Main program loop
     while True:
         if app_run_counter == 0:
@@ -478,8 +574,8 @@ if __name__=="__main__":
             else:
                 timeline_df = execute_user_choice(choice=choice, timeline_df=timeline_df)
         else:
-            app_run_choice = input("Do you want to continue editing your timeline? [y for continue/ any other key for exiting]: ")
-            if app_run_choice.lower() == "y":
+            app_run_choice = input("Do you want to continue editing your timeline? [y for continue/ n or q for exiting]: ")
+            if app_run_choice.lower() == "y" or app_run_choice == "":
                 show_user_choice()
                 choice = input("Enter your choice: ")
                 if choice == "q":
@@ -487,8 +583,10 @@ if __name__=="__main__":
                     break
                 else:
                     timeline_df = execute_user_choice(choice=choice, timeline_df=timeline_df)
-            else:
+            elif app_run_choice.lower() in ['n', 'q']:
                 print("Exiting program.")
                 break
-        app_run_counter += 1
+            else:
+                print("Invalid choice. Please enter y to continue, or n or q to exit.")
 
+        app_run_counter += 1

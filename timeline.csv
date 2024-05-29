@@ -1,3 +1,6 @@
-Date,Task,Subtasks,Priority,Weight
-2024-5-1,mobis,[''],High,10
-2024-9-20,Nothing,['none'],High,7
+Date,Task,Subtasks,Priority,Weight,Task Description,Subtask,Subtask Description
+2024-5-15,Mobis,,High,8,Mobis will have it's demo soon,TI,The demo has to run on TI
+2024-5-1,AI Expo,,Low,1,,,
+2024-9-1,KADIF,,High,8,4 year long project,year_1,3d volume
+2025-9-1,KADIF,,High,8,4 year long project, year_2,Adas
+2026-9-30,KADIF,,High,8,4 year long project, year_3,Autonomous

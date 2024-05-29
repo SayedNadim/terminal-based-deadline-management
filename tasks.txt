@@ -1,0 +1,81 @@
+3D point cloud registration 
+2D/3D object detection 
+2D/3D object segmentation 
+2D/3D scene understanding 
+3D reconstruction
+Video to 3D point cloud
+Video to dense 3D scene 
+Image to dense 3D scene 
+Lidar SLAM
+Monocular SLAM
+Stereo SLAM
+Pseudo-Lidar
+Monocular depth estimation
+Thermal camera depth estimation 
+Multi-camera stitching
+Drivable are estimation
+On-road and off-road detection
+Lane detection 
+Pothole detection 
+Road crack detection 
+Obstacle detection 
+Pedestrian detection 
+Traffic sign detection
+Speed bump detection
+Road markings detection 
+Curb detection 
+Tunnel height estimation
+Visual Pitch Yaw Roll calculation
+Visual road gradient calculation
+Visual tire attachment estimation (P/R/Y)
+Surround-view reconstruction (360)
+Ground view generation 
+Bird-eye-view generation
+AR HUD 
+Static hand gesture recognition
+Dynamic hand gesture recognition 
+3D hand gesture recognition 
+2D/3D Pose estimation (skeleton)
+2D/3D Posture estimation (body)
+2D/3D Human detection 
+2D/3D Human tracking 
+Action recognition
+Behavior analysis (skeleton)
+Behavior analysis (body)
+Age estimation (face)
+Age estimation (skeleton)
+Gender estimation (face)
+Race estimation (face)
+Emotion estimation (face)
+Face recognition (Face ID)
+Facial attribute analysis (segmentation)
+Facial stroke symptom detection
+2D/3D Facial landmark detection 
+2D/3D Head-pose estimation
+Eye detection and tracking (landmarks)
+Eye detection and tracking (segmentation)
+Gaze fixation analysis (attention tracking)
+Child detection (face)
+Child posture detection (skeleton)
+Hand-on steering detection 
+Seat-belt detection 
+Left-item detection 
+Cleanness status detection 
+Visual QR reader
+Visual barcode reader
+Occupancy detection and tracking 
+Image categorization (similarity)
+Multi-camera object tracking 
+Multi-camera person tracking
+Machine vision 
+Surface damage detection
+Edge damage detection 
+Object hole counting
+Smoke and fire detection
+OCR
+Embedded(RENESAS)
+Embedded(TI)
+Embedded(HAILO)
+Embedded(NVIDIA)
+Embedded(EXYNOS)
+Embedded(DEEPX)

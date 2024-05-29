@@ -1,0 +1,40 @@
+<!doctype html>
+<html>
+<head>
+    <title>Task Timeline</title>
+</head>
+<body>
+    <h1>Task Timeline</h1>
+    <form action="{{ url_for('search') }}" method="post">
+        <input type="text" name="keyword" placeholder="Search tasks">
+        <button type="submit">Search</button>
+    </form>
+    <table border="1">
+        <tr>
+            <th>Date</th>
+            <th>Task</th>
+            <th>Task Description</th>
+            <th>Subtask</th>
+            <th>Subtask Description</th>
+            <th>Priority</th>
+            <th>Weight</th>
+            <th>Actions</th>
+        </tr>
+        {% for task in tasks %}
+        <tr>
+            <td>{{ task.date }}</td>
+            <td>{{ task.task }}</td>
+            <td>{{ task.task_description }}</td>
+            <td>{{ task.subtask }}</td>
+            <td>{{ task.subtask_description }}</td>
+            <td>{{ task.priority }}</td>
+            <td>{{ task.weight }}</td>
+            <td>
+                <a href="{{ url_for('remove', id=task.id) }}">Remove</a>
+            </td>
+        </tr>
+        {% endfor %}
+    </table>
+    <a href="{{ url_for('add') }}">Add Task</a>
+</body>
+</html>
