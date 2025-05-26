@@ -1,74 +1,47 @@
+from dotenv import load_dotenv
+import os
 import datetime
+from datetime import date, timedelta
 from typing import List, Optional
 
 import typer
 import questionary
-from sqlalchemy import (
-    Column,
-    Date,
-    ForeignKey,
-    Integer,
-    String,
-    create_engine,
-    select,
-)
-from sqlalchemy.orm import declarative_base, relationship, sessionmaker
+from supabase import create_client
+
+# Load environment
+load_dotenv()
+SUPABASE_URL = os.getenv("SUPABASE_URL")
+SUPABASE_KEY = os.getenv("SUPABASE_KEY")
+if not SUPABASE_URL or not SUPABASE_KEY:
+    raise RuntimeError("SUPABASE_URL and SUPABASE_KEY must be set in environment")
+
+# Initialize Supabase client
+sb = create_client(SUPABASE_URL, SUPABASE_KEY)
 
 app = typer.Typer()
-Base = declarative_base()
-
-
-# --- Database Models ---
-class Task(Base):
-    __tablename__ = "tasks"
-    id = Column(Integer, primary_key=True, index=True)
-    name = Column(String, nullable=False)
-    description = Column(String, default="")
-    subtasks = relationship(
-        "Subtask", back_populates="task", cascade="all, delete-orphan"
-    )
-
-
-class Subtask(Base):
-    __tablename__ = "subtasks"
-    id = Column(Integer, primary_key=True, index=True)
-    task_id = Column(Integer, ForeignKey("tasks.id"), nullable=False)
-    name = Column(String, nullable=False)
-    description = Column(String, default="")
-    date = Column(Date, nullable=False)
-    priority = Column(String, nullable=False)
-    weight = Column(Integer, nullable=False)
-    task = relationship("Task", back_populates="subtasks")
-
-
-# --- Database Setup ---
-DB_URL = "sqlite:///timeline.db"
-engine = create_engine(DB_URL, echo=False, future=True)
-SessionLocal = sessionmaker(bind=engine, future=True)
-
-
-def init_db():
-    Base.metadata.create_all(bind=engine)
 
 
 # --- Deadline Warning Helper ---
 def warn_immediate_deadlines(within_days: int = 1):
-    session = SessionLocal()
-    today = datetime.date.today()
-    cutoff = today + datetime.timedelta(days=within_days)
-    immediates = (
-        session.execute(select(Subtask).where(Subtask.date.between(today, cutoff)))
-        .scalars()
-        .all()
+    today = date.today().isoformat()
+    cutoff = (date.today() + timedelta(days=within_days)).isoformat()
+    resp = (
+        sb.table("subtasks")
+        .select("id,name,date,priority,weight,task_id,tasks(name)")
+        .gte("date", today)
+        .lte("date", cutoff)
+        .execute()
     )
+    immediates = resp.data or []
     if immediates:
         typer.secho(
-            f"\n⚠️  You have {len(immediates)} task(s) due within {within_days} day(s):",
+            f"\n⚠️  You have {len(immediates)} subtask(s) due within {within_days} day(s):",
             fg=typer.colors.RED,
         )
         for st in immediates:
+            task_name = st.get("tasks", {}).get("name", "<unknown>")
             typer.secho(
-                f"  [{st.id}] {st.task.name}->{st.name} on {st.date}",
+                f"  [{st['id']}] {task_name}->{st['name']} on {st['date']}",
                 fg=typer.colors.RED,
             )
         typer.echo("")
@@ -77,94 +50,82 @@ def warn_immediate_deadlines(within_days: int = 1):
 # --- Interactive Mode ---
 @app.callback(invoke_without_command=True)
 def interactive(ctx: typer.Context):
-    """Launch interactive menu, showing deadline warnings."""
-    if ctx.invoked_subcommand is None:
-        init_db()  # ensure DB exists
+    """Interactive menu with deadline warnings."""
+    warn_immediate_deadlines(1)
+    while True:
         warn_immediate_deadlines(1)
-        while True:
-            warn_immediate_deadlines(1)
-            action = questionary.select(
-                "Select an action:",
-                choices=[
-                    "Add Task",
-                    "List Subtasks",
-                    "Remove Subtask",
-                    "Update Subtask",
-                    "Check Deadlines",
-                    "Quit",
-                ],
-            ).ask()
-            if action in (None, "Quit"):
-                typer.echo("Exiting.")
-                raise typer.Exit()
+        action = questionary.select(
+            "Select an action:",
+            choices=[
+                "Add Task",
+                "List Subtasks",
+                "Remove Subtask",
+                "Update Subtask",
+                "Check Deadlines",
+                "Quit",
+            ],
+        ).ask()
+        if action in (None, "Quit"):
+            typer.echo("Exiting.")
+            raise typer.Exit()
 
-            if action == "Add Task":
-                task = questionary.text("Task name:").ask()
-                desc = questionary.text("Task description (optional):").ask() or ""
-                count = int(questionary.text("How many subtasks? ").ask() or 0)
-                subs, subdescs, dates, prios, weights = [], [], [], [], []
-                for i in range(count):
-                    subs.append(questionary.text(f"Subtask {i+1} name:").ask())
-                    subdescs.append(
-                        questionary.text(f"Subtask {i+1} desc:").ask() or ""
-                    )
-                    dates.append(
-                        questionary.text(f"Subtask {i+1} date (YYYY-MM-DD):").ask()
-                    )
-                    prios.append(
-                        questionary.select(
-                            f"Subtask {i+1} priority:",
-                            choices=["High", "Medium", "Low"],
-                        ).ask()
-                    )
-                    weights.append(
-                        int(questionary.text(f"Subtask {i+1} weight (1-10):").ask())
-                    )
-                ctx.invoke(
-                    add,
-                    task=task,
-                    description=desc,
-                    subtask=subs,
-                    subdesc=subdescs,
-                    date=dates,
-                    priority=prios,
-                    weight=weights,
+        if action == "Add Task":
+            task = questionary.text("Task name:").ask()
+            desc = questionary.text("Task description (optional):").ask() or ""
+            count = int(questionary.text("How many subtasks? ").ask() or 0)
+            names, descriptions, dates, priorities, weights = [], [], [], [], []
+            for i in range(count):
+                names.append(questionary.text(f"Subtask {i+1} name:").ask())
+                descriptions.append(
+                    questionary.text(f"Subtask {i+1} desc:").ask() or ""
                 )
+                dates.append(
+                    questionary.text(f"Subtask {i+1} date (YYYY-MM-DD):").ask()
+                )
+                priorities.append(
+                    questionary.select(
+                        f"Subtask {i+1} priority:", choices=["High", "Medium", "Low"]
+                    ).ask()
+                )
+                weights.append(
+                    int(questionary.text(f"Subtask {i+1} weight (1-10):").ask())
+                )
+            ctx.invoke(
+                add,
+                task=task,
+                description=desc,
+                subtask=names,
+                subdesc=descriptions,
+                date=dates,
+                priority=priorities,
+                weight=weights,
+            )
 
-            elif action == "List Subtasks":
-                days = questionary.text(
-                    "Show upcoming in N days (blank for all):"
-                ).ask()
-                upcoming = int(days) if days else None
-                ctx.invoke(list, upcoming=upcoming)
+        elif action == "List Subtasks":
+            days = questionary.text("Show upcoming in N days (blank for all):").ask()
+            upcoming = int(days) if days else None
+            ctx.invoke(list_subtasks, upcoming=upcoming)
 
-            elif action == "Remove Subtask":
-                sid = int(questionary.text("Subtask ID to remove: ").ask())
-                ctx.invoke(remove, subtask_id=sid)
+        elif action == "Remove Subtask":
+            sid = int(questionary.text("Subtask ID to remove: ").ask())
+            ctx.invoke(remove, subtask_id=sid)
 
-            elif action == "Update Subtask":
-                sid = int(questionary.text("Subtask ID to update: ").ask())
-                prio = questionary.select(
-                    "New priority:", choices=["(None)", "High", "Medium", "Low"]
-                ).ask()
-                prio = None if prio == "(None)" else prio
-                w = questionary.text("New weight (1-10, blank for none):").ask()
-                weight = int(w) if w else None
-                ctx.invoke(update, subtask_id=sid, priority=prio, weight=weight)
+        elif action == "Update Subtask":
+            sid = int(questionary.text("Subtask ID to update: ").ask())
+            prio = questionary.select(
+                "New priority:", choices=["(None)", "High", "Medium", "Low"]
+            ).ask()
+            prio = None if prio == "(None)" else prio
+            w = questionary.text("New weight (1-10, blank for none):").ask()
+            weight = int(w) if w else None
+            ctx.invoke(update, subtask_id=sid, priority=prio, weight=weight)
 
-            elif action == "Check Deadlines":
-                w = int(questionary.text("Within days (default 1):").ask() or 1)
-                ctx.invoke(deadlines, within=w)
+        elif action == "Check Deadlines":
+            w = int(questionary.text("Within days (default 1):").ask() or 1)
+            ctx.invoke(deadlines, within=w)
 
 
 # --- CLI Commands ---
-@app.command()
-def init():
-    """Initialize the database explicitly."""
-    init_db()
-    typer.secho("Database initialized at timeline.db", fg=typer.colors.GREEN)
-
-
 @app.command()
 def add(
     task: str = typer.Option(..., prompt=True),
@@ -175,66 +136,77 @@ def add(
     priority: List[str] = typer.Option([], "--priority"),
     weight: List[int] = typer.Option([], "--weight"),
 ):
-    """Add a task and its subtasks."""
-    session = SessionLocal()
-    t = Task(name=task, description=description)
-    session.add(t)
-    session.flush()
+    """Add a task and its subtasks via Supabase."""
+    # Insert main task
+    resp = (
+        sb.table("tasks")
+        .insert(
+            {
+                "name": task,
+                "description": description,
+            }
+        )
+        .execute()
+    )
+    task_id = resp.data[0]["id"]
+    # Prepare subtasks
     n = len(subtask)
     if any(len(lst) != n for lst in (subdesc, date, priority, weight)):
-        typer.secho("Subtask argument lists must be equal length.", fg=typer.colors.RED)
+        typer.secho("Subtask argument lists must match lengths.", fg=typer.colors.RED)
         raise typer.Exit(1)
+    records = []
     for i in range(n):
+        # Validate date format
         try:
-            d = datetime.datetime.strptime(date[i], "%Y-%m-%d").date()
+            datetime.datetime.strptime(date[i], "%Y-%m-%d")
         except ValueError:
-            typer.secho(f"Bad date: {date[i]}", fg=typer.colors.RED)
-            session.rollback()
+            typer.secho(f"Invalid date: {date[i]}", fg=typer.colors.RED)
             raise typer.Exit(1)
-        st = Subtask(
-            task_id=t.id,
-            name=subtask[i],
-            description=subdesc[i],
-            date=d,
-            priority=priority[i],
-            weight=weight[i],
+        records.append(
+            {
+                "task_id": task_id,
+                "name": subtask[i],
+                "description": subdesc[i],
+                "date": date[i],
+                "priority": priority[i],
+                "weight": weight[i],
+            }
         )
-        session.add(st)
-    session.commit()
+    if records:
+        sb.table("subtasks").insert(records).execute()
     typer.secho(f"Added '{task}' with {n} subtasks.", fg=typer.colors.GREEN)
 
 
 @app.command(name="list")
-def list(
+def list_subtasks(
     upcoming: Optional[int] = typer.Option(None, "--upcoming", "-u"),
 ):
-    """List all (or upcoming) subtasks."""
-    session = SessionLocal()
-    stmt = select(Subtask).join(Task)
+    """List subtasks (via Supabase)."""
+    query = sb.table("subtasks").select("id,name,date,priority,weight,tasks(name)")
     if upcoming is not None:
-        today = datetime.date.today()
-        limit = today + datetime.timedelta(days=upcoming)
-        stmt = stmt.where(Subtask.date.between(today, limit))
-    rows = session.execute(stmt).scalars().all()
+        today = date.today().isoformat()
+        cutoff = (date.today() + timedelta(days=upcoming)).isoformat()
+        query = query.gte("date", today).lte("date", cutoff)
+    rows = query.execute().data or []
     if not rows:
         typer.secho("No subtasks found.", fg=typer.colors.YELLOW)
         raise typer.Exit()
     for st in rows:
+        task_name = st.get("tasks", {}).get("name", "<unknown>")
         typer.echo(
-            f"[{st.id}] {st.task.name} -> {st.name} | {st.date} | {st.priority} | w={st.weight}"
+            f"[{st['id']}] {task_name} -> {st['name']} | {st['date']} | {st['priority']} | w={st['weight']}"
         )
 
 
 @app.command()
 def remove(subtask_id: int):
-    """Remove a subtask by its ID."""
-    session = SessionLocal()
-    st = session.get(Subtask, subtask_id)
-    if not st:
-        typer.secho(f"ID {subtask_id} not found.", fg=typer.colors.RED)
+    """Remove a subtask by ID via Supabase."""
+    resp = sb.table("subtasks").delete().eq("id", subtask_id).execute()
+    if resp.error:
+        typer.secho(
+            f"Error removing ID {subtask_id}: {resp.error}", fg=typer.colors.RED
+        )
         raise typer.Exit(1)
-    session.delete(st)
-    session.commit()
     typer.secho(f"Removed subtask {subtask_id}.", fg=typer.colors.GREEN)
 
 
@@ -244,49 +216,57 @@ def update(
     priority: Optional[str] = typer.Option(None, "--priority"),
     weight: Optional[int] = typer.Option(None, "--weight"),
 ):
-    """Update priority/weight of a subtask."""
-    session = SessionLocal()
-    st = session.get(Subtask, subtask_id)
-    if not st:
-        typer.secho(f"ID {subtask_id} not found.", fg=typer.colors.RED)
-        raise typer.Exit(1)
+    """Update priority/weight of a subtask via Supabase."""
+    data = {}
     if priority:
-        st.priority = priority
+        data["priority"] = priority
     if weight:
-        st.weight = weight
-    session.commit()
+        data["weight"] = weight
+    if not data:
+        typer.echo("Nothing to update.")
+        raise typer.Exit()
+    resp = sb.table("subtasks").update(data).eq("id", subtask_id).execute()
+    if resp.error:
+        typer.secho(
+            f"Error updating ID {subtask_id}: {resp.error}", fg=typer.colors.RED
+        )
+        raise typer.Exit(1)
     typer.secho(f"Updated subtask {subtask_id}.", fg=typer.colors.GREEN)
 
 
 @app.command()
 def deadlines(within: int = typer.Option(1, "--within", "-w")):
-    """Show immediate and nearest deadlines."""
-    session = SessionLocal()
-    today = datetime.date.today()
-    im_end = today + datetime.timedelta(days=within)
-    immediate = (
-        session.execute(select(Subtask).where(Subtask.date.between(today, im_end)))
-        .scalars()
-        .all()
-    )
-    if immediate:
+    """Show immediate and next deadlines via Supabase."""
+    today = date.today().isoformat()
+    cutoff = (date.today() + timedelta(days=within)).isoformat()
+    imm = (
+        sb.table("subtasks")
+        .select("id,name,date,tasks(name)")
+        .gte("date", today)
+        .lte("date", cutoff)
+        .execute()
+        .data
+    ) or []
+    if imm:
         typer.secho("Immediate deadlines:", fg=typer.colors.RED)
-        for st in immediate:
-            typer.echo(f"  {st.task.name}->{st.name} due {st.date}")
+        for st in imm:
+            task_name = st.get("tasks", {}).get("name", "<unknown>")
+            typer.echo(f"  {task_name}->{st['name']} due {st['date']}")
     else:
-        next_one = (
-            session.execute(
-                select(Subtask)
-                .where(Subtask.date > today)
-                .order_by(Subtask.date)
-                .limit(1)
-            )
-            .scalars()
-            .first()
+        nxt = (
+            sb.table("subtasks")
+            .select("id,name,date,tasks(name)")
+            .gt("date", today)
+            .order("date", count="asc")
+            .limit(1)
+            .execute()
+            .data
         )
-        if next_one:
+        if nxt:
+            st = nxt[0]
+            task_name = st.get("tasks", {}).get("name", "<unknown>")
             typer.secho("Nearest deadline:", fg=typer.colors.BLUE)
-            typer.echo(f"  {next_one.task.name}->{next_one.name} due {next_one.date}")
+            typer.echo(f"  {task_name}->{st['name']} due {st['date']}")
         else:
             typer.secho("No upcoming deadlines.", fg=typer.colors.GREEN)
 
